@@ -49,12 +49,19 @@ class GAPing
     def GAPing.tokenize(code)
         res = code.scan(/\h{1,32}/).to_a
         raise "invalid code sequence" if res.any? { |e| e.size != 32 }
-        res.map { |e| unmd5 e }
+        memo = {}
+        res.map { |e|
+            p "command: #{e}"
+            memo[e] ||= unmd5 e
+            p "finished."
+        }
     end
     def GAPing.encode(commands)
         commands = commands.split rescue commands
         memo = {}
-        commands.map { |e| memo[e] ||= md5 e }.join " "
+        commands.map { |e|
+            memo[e] ||= md5 e
+        }.join " "
     end
     
     def initialize(code)
@@ -155,5 +162,7 @@ case mode
     when :raw
         GAPing.new(splitify code).run
     when :encode
-        puts GAPing.encode(splitify code)
+        toks = splitify code
+        toks.keep_if { |e| !e.empty? }
+        puts GAPing.encode toks
 end
