@@ -127,6 +127,10 @@ class GAPing
                 @ip = @jump[@ip] unless GAPing.truthy? @stack.last
             when "shut"
                 @ip = @jump[@ip] if GAPing.truthy? @stack.last
+            when "get"
+                a, n = @stack.pop(2)
+                @stack << a
+                @stack << a[n]
             when "?"
                 p self
             when "in"
@@ -154,8 +158,8 @@ mode = :run
 options = {
     debug: false
 }
-OptionParser.new do |opts|
-    opts.banner = "Usage: example.rb [options]"
+parser = OptionParser.new { |opts|
+    opts.banner = "Usage: memGAP.rb [options]"
 
     opts.on("-e", "--encode", "Encode the program string") { |v|
         mode = :encode
@@ -169,7 +173,19 @@ OptionParser.new do |opts|
     opts.on("-r", "--raw", "Runs the unencoded program") { |v|
         mode = :raw
     }
-end.parse!
+    opts.on_tail("-h", "--help", "Prints this message") { |v|
+        puts parser
+        exit 0
+    }
+}
+
+parser.parse!
+
+if ARGV.empty?
+    STDERR.puts "Insufficient arguments passed to memGAP.rb."
+    STDERR.puts parser
+    exit 1
+end
 
 code = ARGV[0]
 
