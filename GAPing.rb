@@ -100,9 +100,9 @@ class GAPing
             when "?"
                 p self
             when "in"
-                @stack << gets
+                @stack << STDIN.gets
             when "#"
-                @stack << gets.to_i
+                @stack << STDIN.gets.to_i
             else
                 @stack.push token
         end
