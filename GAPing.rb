@@ -99,6 +99,10 @@ class GAPing
                 @ip = @jump[@ip] if @stack.last
             when "?"
                 p self
+            when "in"
+                @stack << gets
+            when "#"
+                @stack << gets.to_i
             else
                 @stack.push token
         end
