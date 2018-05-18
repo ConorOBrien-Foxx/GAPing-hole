@@ -83,6 +83,8 @@ class GAPing
                 @stack.push -@stack.pop
             when "rep"
                 @stack.push "1" * @stack.pop
+            when "swap"
+                @stack.push *@stack.pop(2).reverse
             when "char"
                 @stack.push @stack.pop.chr
             when "out"
@@ -95,6 +97,8 @@ class GAPing
                 @ip = @jump[@ip] unless @stack.last
             when "shut"
                 @ip = @jump[@ip] if @stack.last
+            when "?"
+                p self
             else
                 @stack.push token
         end
