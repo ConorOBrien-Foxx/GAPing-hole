@@ -1,4 +1,7 @@
+require 'optparse'
 require 'digest'
+
+$debug_mem = false
 
 def all_ascii
     Enumerator.new { |g|
@@ -19,6 +22,12 @@ def all_ascii
                 c[ind] += 1
             end
         }
+    }
+end
+
+def splitify(code)
+    code[1..-1].split(code[0]).map { |e|
+        e.gsub(/[\r\n]/, "")
     }
 end
 
@@ -51,9 +60,11 @@ class GAPing
         raise "invalid code sequence" if res.any? { |e| e.size != 32 }
         memo = {}
         res.map { |e|
-            p "command: #{e}"
+            puts "command: #{e}" if $debug_mem
+            puts "cache hit!" if $debug_mem && memo[e]
             memo[e] ||= unmd5 e
-            p "finished."
+            puts "finished." if $debug_mem
+            memo[e]
         }
     end
     def GAPing.encode(commands)
@@ -138,31 +149,44 @@ class GAPing
     end
 end
 
-def splitify(code)
-    code[1..-1].split(code[0]).map{|e|e.gsub(/\r|\n/,"")}
-end
-
-code = ARGV[0]
 mode = :run
 
-if code[0] == "-"
-    mode = {
-        "e" => :encode,
-        "r" => :raw
-    }[code[1]]
-    raise "no such cmd argument #{code}" if mode.nil?
-    code = ARGV[1]
-end
+options = {
+    debug: false
+}
+OptionParser.new do |opts|
+    opts.banner = "Usage: example.rb [options]"
+
+    opts.on("-e", "--encode", "Encode the program string") { |v|
+        mode = :encode
+    }
+    opts.on("-d", "--debug", "Debugs the program execution and decoding") { |v|
+        options[:debug] = true
+    }
+    opts.on("-r", "--raw", "Runs the unencoded program") { |v|
+        mode = :raw
+    }
+end.parse!
+
+code = ARGV[0]
 
 code = File.read(code) rescue code
 
+$debug_mem = options[:debug]
+
+inst = nil
 case mode
     when :run
-        GAPing.new(code).run
+        inst = GAPing.new(code)
     when :raw
-        GAPing.new(splitify code).run
+        inst = GAPing.new(splitify code)
     when :encode
         toks = splitify code
         toks.keep_if { |e| !e.empty? }
         puts GAPing.encode toks
+end
+
+unless inst.nil?
+    inst.run
+    p inst if $debug_mem
 end
