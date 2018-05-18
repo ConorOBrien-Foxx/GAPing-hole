@@ -161,7 +161,10 @@ OptionParser.new do |opts|
         mode = :encode
     }
     opts.on("-d", "--debug", "Debugs the program execution and decoding") { |v|
-        options[:debug] = true
+        $debug_mem = true
+    }
+    opts.on("-t", "--time", "Times the programs execution") { |v|
+        options[:time] = true
     }
     opts.on("-r", "--raw", "Runs the unencoded program") { |v|
         mode = :raw
@@ -172,9 +175,10 @@ code = ARGV[0]
 
 code = File.read(code) rescue code
 
-$debug_mem = options[:debug]
-
 inst = nil
+if options[:time]
+    start = Time.now
+end
 case mode
     when :run
         inst = GAPing.new(code)
@@ -189,4 +193,11 @@ end
 unless inst.nil?
     inst.run
     p inst if $debug_mem
+    if options[:time]
+        stop = Time.now
+        delta = stop - start
+        puts
+        puts
+        puts "time taken: #{delta}s"
+    end
 end
