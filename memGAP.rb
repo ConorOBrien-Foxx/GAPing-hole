@@ -54,20 +54,20 @@ def unmd5(hash)
     }
 end
 
-class GAPing
-    def GAPing.tokenize(code)
+class MemGAP
+    def MemGAP.tokenize(code)
         res = code.scan(/\h{1,32}/).to_a
         raise "invalid code sequence" if res.any? { |e| e.size != 32 }
         memo = {}
         res.map { |e|
-            puts "command: #{e}" if $debug_mem
+            puts "decoding command: #{e}" if $debug_mem
             puts "cache hit!" if $debug_mem && memo[e]
             memo[e] ||= unmd5 e
             puts "finished." if $debug_mem
             memo[e]
         }
     end
-    def GAPing.encode(commands)
+    def MemGAP.encode(commands)
         commands = commands.split rescue commands
         memo = {}
         commands.map { |e|
@@ -76,7 +76,8 @@ class GAPing
     end
     
     def initialize(code)
-        @tokens = GAPing.tokenize(code) rescue code
+        @tokens = MemGAP.tokenize(code) rescue code
+        p @tokens if $debug_mem
         @stack = []
         @ip = 0
         @jump = {}
@@ -92,8 +93,8 @@ class GAPing
         }
     end
     
-    def GAPing.truthy?(e)
-        !e.empty? rescue e != 0
+    def MemGAP.truthy?(e)
+        e != nil && e != 0 && e != ""
     end
     
     def exec(token)
@@ -124,9 +125,9 @@ class GAPing
             when "len"
                 @stack.push @stack.size
             when "open"
-                @ip = @jump[@ip] unless GAPing.truthy? @stack.last
+                @ip = @jump[@ip] unless MemGAP.truthy? @stack.last
             when "shut"
-                @ip = @jump[@ip] if GAPing.truthy? @stack.last
+                @ip = @jump[@ip] if MemGAP.truthy? @stack.last
             when "get"
                 a, n = @stack.pop(2)
                 @stack << a
@@ -197,18 +198,21 @@ if options[:time]
 end
 case mode
     when :run
-        inst = GAPing.new(code)
+        inst = MemGAP.new(code)
     when :raw
-        inst = GAPing.new(splitify code)
+        inst = MemGAP.new(splitify code)
     when :encode
         toks = splitify code
         toks.keep_if { |e| !e.empty? }
-        puts GAPing.encode toks
+        puts MemGAP.encode toks
 end
 
 unless inst.nil?
     inst.run
-    p inst if $debug_mem
+    if $debug_mem
+        puts
+        p inst
+    end
     if options[:time]
         stop = Time.now
         delta = stop - start
